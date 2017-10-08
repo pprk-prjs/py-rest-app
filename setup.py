@@ -13,7 +13,7 @@ setup(name='py-rest-api',
       url='',
       install_requires=[
         'scrapy>=1.4.0',
-        'Unidecode>=0.4.0',
+        'Unidecode>=0.4.21',
         'Flask>=0.12.2', 
         'MarkupSafe' 
       ],

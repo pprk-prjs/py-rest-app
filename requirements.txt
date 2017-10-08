@@ -1,4 +1,4 @@
 scrapy
-Unicode
+Unicode>=0.4.21
 Flask
 MarkupSafe
