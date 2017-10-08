@@ -1,3 +1,4 @@
 scrapy
 Unicode
 Flask
+MarkupSafe
