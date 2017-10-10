@@ -14,6 +14,10 @@ setup(name='py-rest-api',
       install_requires=[
         'scrapy>=1.4.0',
         'Flask>=0.12.2', 
-        'MarkupSafe' 
+        'MarkupSafe',
+        'lxml', 
+        'requests', 
+        'apscheduler', 
+        'unidecode' 
       ],
 )

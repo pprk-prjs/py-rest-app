@@ -1,3 +1,7 @@
 scrapy
 Flask
 MarkupSafe
+lxml 
+requests 
+apscheduler 
+unidecode

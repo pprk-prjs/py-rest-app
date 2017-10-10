@@ -8,6 +8,13 @@
 import scrapy
 
 
+class PyTvIdItem(scrapy.Item):
+    
+    def __setitem__(self, key, value):
+        self._values[key] = value
+        self.fields[key] = {}
+    
+            
 class PytvinfoItem(scrapy.Item):
 
     tv_id = scrapy.Field()
