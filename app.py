@@ -1,68 +1,116 @@
-#!/usr/bin/env python
+import os, json
+from datetime import datetime
+from flask import Flask, request, flash, url_for, redirect, render_template, abort, send_from_directory, send_file, make_response
+from werkzeug import secure_filename
+import shutil
+import base64 as b
+import p_fmodules.load_epg as mle
 
-# This file may be used instead of Apache mod_wsgi to run your python
-# web application in a different framework.  A few examples are
-# provided (cherrypi, gevent), but this file may be altered to run
-# whatever framework is desired - or a completely customized service.
-#
-import imp
-import os
-import sys
 
-try:
-  virtenv = os.path.join(os.environ.get('OPENSHIFT_PYTHON_DIR','.'), 'virtenv')
-  python_version = "python"+str(sys.version_info[0])+"."+str(sys.version_info[1]) 
-  os.environ['PYTHON_EGG_CACHE'] = os.path.join(virtenv, 'lib', python_version, 'site-packages')
-  virtualenv = os.path.join(virtenv, 'bin','activate_this.py')
-  if(sys.version_info[0] < 3):
-    execfile(virtualenv, dict(__file__=virtualenv))
-  else:
-    exec(open(virtualenv).read(), dict(__file__=virtualenv))
+app = Flask(__name__)
+app.config.from_pyfile('flaskapp.cfg')
+ALLOWED_EXTENSIONS = set(['zip', 'txt'])
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route("/reloadepg", methods=['GET','POST'])
+def reload_epg():
+    mle.reload_epg()
+    return json.dumps({'RESP':'SUCCESS'}) 
+
+# @app.route("/getepg", methods=['POST',])
+# def get_epg():
+#     if request.method == 'POST':
+#         # print(request.headers)
+#  
+#         tv_ids = request.headers['tv_ids']
+#  
+#         return json.dumps(get_epg(tv_ids.split("#"))) 
+# #         return json.dumps(mle.get_epg(tv_ids.split("#"))) 
+#     else:
+#         return json.dumps({'EPG_ERROR':'USE_POST'})
     
-except IOError:
-  pass
+@app.route("/getepg_all", methods=['GET',])
+def get_epg_all():
+    if request.method == 'GET':
+        out = json.dumps(mle.get_epg_all())
+#         print(out)
+        return out 
+    else:
+        return json.dumps({'EPG_ERROR':'USE_POST'})
 
-#
-# IMPORTANT: Put any additional includes below this line.  If placed above this
-# line, it's possible required libraries won't be in your searchable path
-#
 
+# @app.route('/<path:resource>')
+# def serveStaticResource(resource):
+#     return send_from_directory('static/', resource)
+# 
+# @app.route("/test")
+# def test():
+#     return "<strong>It's Alive!</strong>"
+# 
+# @app.route("/getepg", methods=['POST',])
+# def get_epg():
+#     if request.method == 'POST':
+#         # print(request.headers)
+# 
+#         tv_ids = request.headers['tv_ids']
+# 
+#         return json.dumps(get_epg(tv_ids.split("#"))) 
+# #         return json.dumps(mle.get_epg(tv_ids.split("#"))) 
+#     else:
+#         return json.dumps({'EPG_ERROR':'USE_POST'})
+# 
+# @app.route("/getepg_all", methods=['GET',])
+# def get_epg_all():
+#     if request.method == 'GET':
+#         return json.dumps(mle.get_epg_all()) 
+#     else:
+#         return json.dumps({'EPG_ERROR':'USE_POST'})
+# 
+# 
+# @app.route("/reloadepg", methods=['GET','POST'])
+# def reload_epg():
+#     mle.load_epg()
+#     return json.dumps({'RESP':'SUCCESS'}) 
+# 
+# @app.route("/load_image", methods=['GET', 'POST'])
+# def rli():
+#     # print("********************************* ARGS ********************")
+#     _url = request.args.get('img_url', 'NULL')
+#     # print(_url)
+#     if 'NULL' not in _url:
+#         # print("********************************* BASE64 ********************")
+#         _url = b.b64decode(_url).decode("utf-8") 
+#         resp = piu.load_image(_url)
+#         if resp.status_code == 200:
+#             resp = make_response(resp.content)
+#             resp.headers['Content-Type'] = 'image/jpeg'
+#             # resp.headers['Content-Disposition'] = 'attachment; filename=img.jpg'
+#             return resp            
+# 
+#     return json.dumps({'RESP':'NULL'}) 
 
-#
-#  main():
-#
+#############################################################################################
+
+# from apscheduler.schedulers.background import BackgroundScheduler
+# from datetime import datetime
+# 
+# def _schedule_load_epg():
+#     print("LOADING EPG AT:: ", datetime.now())
+#     mle.load_epg()
+# 
+# scheduler = BackgroundScheduler()
+# 
+# job = scheduler.add_job(_schedule_load_epg, 'cron', hour=6, minute=10, id='LOAD_EPG', max_instances=1, replace_existing=True)
+# # job = scheduler.add_job(_schedule_load_epg, 'cron', hour=6, minute=0, id='LOAD_EPG', max_instances=1, replace_existing=True)
+# 
+# scheduler.start()
+
 if __name__ == '__main__':
-  application = imp.load_source('app', 'flaskapp.py')
-  port = application.app.config['PORT']
-  ip = application.app.config['IP']
-  app_name = application.app.config['APP_NAME']
-  host_name = application.app.config['HOST_NAME']
-
-  fwtype="wsgiref"
-  for fw in ("gevent", "cherrypy", "flask"):
-    try:
-      imp.find_module(fw)
-      fwtype = fw
-    except ImportError:
-      pass
-
-  print('Starting WSGIServer type %s on %s:%d ... ' % (fwtype, ip, port))
-  if fwtype == "gevent":
-    from gevent.pywsgi import WSGIServer
-    WSGIServer((ip, port), application.app).serve_forever()
-
-  elif fwtype == "cherrypy":
-    from cherrypy import wsgiserver
-    server = wsgiserver.CherryPyWSGIServer(
-      (ip, port), application.app, server_name=host_name)
-    server.start()
-
-  elif fwtype == "flask":
-    from flask import Flask
-    server = Flask(__name__)
-    server.wsgi_app = application.app
-    server.run(host=ip, port=port)
-
-  else:
-    from wsgiref.simple_server import make_server
-    make_server(ip, port, application.app).serve_forever()
+    app.run()
