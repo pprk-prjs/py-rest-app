@@ -10,6 +10,7 @@ setup(name='py-rest-api',
       description='REST on openshift',
       author='peperk',
       author_email='peperk AT gmail',
+      include_package_data=True,
       url='',
       install_requires=[
         'scrapy>=1.4.0',
